@@ -10,6 +10,13 @@ let currentEditingCustomer = null;
 let paymentChart = null;
 let salesChart = null;
 
+// Caching and performance optimizations
+let cachedReports = {};
+let productsMap = new Map();
+let customersMap = new Map();
+let expensesMap = new Map();
+let searchTimeout = null;
+
 // Utility function to format numbers with thousand separators
 function formatCurrency(amount) {
     const currencySymbols = {
@@ -204,6 +211,9 @@ async function loadProducts() {
         const data = await response.json();
         if (data.success) {
             products = data.products;
+            // Create indexed map for O(1) lookups
+            productsMap.clear();
+            products.forEach(p => productsMap.set(p.id, p));
             renderProductsTable();
             renderProductGrid();
         }
@@ -214,8 +224,11 @@ async function loadProducts() {
 
 function renderProductsTable() {
     const tbody = document.getElementById('productsTable');
-    tbody.innerHTML = products.map(product => `
-        <tr>
+    const fragment = document.createDocumentFragment();
+    
+    products.forEach(product => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
             <td>${product.name}</td>
             <td>${product.category}</td>
             <td>${product.barcode || 'N/A'}</td>
@@ -226,38 +239,63 @@ function renderProductsTable() {
                 <button class="btn-edit" onclick="editProduct('${product.id}')">Edit</button>
                 <button class="btn-danger" onclick="deleteProduct('${product.id}')">Delete</button>
             </td>
-        </tr>
-    `).join('');
+        `;
+        fragment.appendChild(tr);
+    });
+    
+    tbody.innerHTML = '';
+    tbody.appendChild(fragment);
 }
 
 function renderProductGrid() {
     const grid = document.getElementById('productGrid');
-    const filtered = products.filter(p => parseInt(p.quantity) > 0);
+    const fragment = document.createDocumentFragment();
     
-    grid.innerHTML = filtered.map(product => `
-        <div class="product-card" onclick="addToCart('${product.id}')">
-            <h4>${product.name}</h4>
-            <div class="price">${formatCurrency(product.sale_price)}</div>
-            <div class="stock">Stock: ${parseInt(product.quantity).toLocaleString('en-US')}</div>
-        </div>
-    `).join('');
+    products.forEach(product => {
+        if (parseInt(product.quantity) > 0) {
+            const div = document.createElement('div');
+            div.className = 'product-card';
+            div.onclick = () => addToCart(product.id);
+            div.innerHTML = `
+                <h4>${product.name}</h4>
+                <div class="price">${formatCurrency(product.sale_price)}</div>
+                <div class="stock">Stock: ${parseInt(product.quantity).toLocaleString('en-US')}</div>
+            `;
+            fragment.appendChild(div);
+        }
+    });
+    
+    grid.innerHTML = '';
+    grid.appendChild(fragment);
 }
 
 function filterProducts() {
-    const search = document.getElementById('productSearch').value.toLowerCase();
-    const filtered = products.filter(p => 
-        p.name.toLowerCase().includes(search) || 
-        p.category.toLowerCase().includes(search)
-    );
-    
-    const grid = document.getElementById('productGrid');
-    grid.innerHTML = filtered.map(product => `
-        <div class="product-card" onclick="addToCart('${product.id}')">
-            <h4>${product.name}</h4>
-            <div class="price">${formatCurrency(product.sale_price)}</div>
-            <div class="stock">Stock: ${parseInt(product.quantity).toLocaleString('en-US')}</div>
-        </div>
-    `).join('');
+    // Debounce search for better performance
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        const search = document.getElementById('productSearch').value.toLowerCase();
+        const grid = document.getElementById('productGrid');
+        const fragment = document.createDocumentFragment();
+        
+        products.forEach(product => {
+            if ((product.name.toLowerCase().includes(search) || 
+                 product.category.toLowerCase().includes(search)) && 
+                parseInt(product.quantity) > 0) {
+                const div = document.createElement('div');
+                div.className = 'product-card';
+                div.onclick = () => addToCart(product.id);
+                div.innerHTML = `
+                    <h4>${product.name}</h4>
+                    <div class="price">${formatCurrency(product.sale_price)}</div>
+                    <div class="stock">Stock: ${parseInt(product.quantity).toLocaleString('en-US')}</div>
+                `;
+                fragment.appendChild(div);
+            }
+        });
+        
+        grid.innerHTML = '';
+        grid.appendChild(fragment);
+    }, 150);
 }
 
 function showProductModal() {
@@ -318,6 +356,7 @@ async function saveProduct(event) {
         
         const data = await response.json();
         if (data.success) {
+            cachedReports = {}; // Invalidate cache
             await loadProducts();
             closeProductModal();
         }
@@ -372,7 +411,7 @@ async function deleteProduct(productId) {
 
 // Cart Management
 function addToCart(productId) {
-    const product = products.find(p => p.id === productId);
+    const product = productsMap.get(productId);
     if (!product || parseInt(product.quantity) <= 0) {
         alert('❌ Product out of stock!');
         return;
@@ -400,7 +439,7 @@ function addToCart(productId) {
 
 function updateCartItemQty(productId, change) {
     const item = currentCart.find(i => i.product_id === productId);
-    const product = products.find(p => p.id === productId);
+    const product = productsMap.get(productId);
     
     if (item) {
         const newQty = item.quantity + change;
@@ -487,6 +526,7 @@ async function completeSale() {
         
         const data = await response.json();
         if (data.success) {
+            cachedReports = {}; // Invalidate cache
             showReceipt(data.sale);
             currentCart = [];
             renderCart();
@@ -542,6 +582,9 @@ async function loadCustomers() {
         const data = await response.json();
         if (data.success) {
             customers = data.customers;
+            // Create indexed map for O(1) lookups
+            customersMap.clear();
+            customers.forEach(c => customersMap.set(c.id, c));
             renderCustomersTable();
         }
     } catch (error) {
@@ -551,8 +594,11 @@ async function loadCustomers() {
 
 function renderCustomersTable() {
     const tbody = document.getElementById('customersTable');
-    tbody.innerHTML = customers.map(customer => `
-        <tr>
+    const fragment = document.createDocumentFragment();
+    
+    customers.forEach(customer => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
             <td>${customer.name}</td>
             <td>${customer.phone}</td>
             <td>${formatCurrency(customer.balance || 0)}</td>
@@ -560,8 +606,12 @@ function renderCustomersTable() {
                 <button class="btn-edit" onclick="editCustomer('${customer.id}')">Edit</button>
                 <button class="btn-danger" onclick="deleteCustomer('${customer.id}')">Delete</button>
             </td>
-        </tr>
-    `).join('');
+        `;
+        fragment.appendChild(tr);
+    });
+    
+    tbody.innerHTML = '';
+    tbody.appendChild(fragment);
 }
 
 function showCustomerModal() {
@@ -579,7 +629,7 @@ function closeCustomerModal() {
 }
 
 function editCustomer(customerId) {
-    const customer = customers.find(c => c.id === customerId);
+    const customer = customersMap.get(customerId);
     if (customer) {
         currentEditingCustomer = customer;
         document.getElementById('customerModalTitle').textContent = 'Edit Customer';
@@ -622,7 +672,7 @@ async function saveCustomer(event) {
 }
 
 async function deleteCustomer(customerId) {
-    const customer = customers.find(c => c.id === customerId);
+    const customer = customersMap.get(customerId);
     if (!customer) return;
     
     // Show inline confirmation
@@ -672,6 +722,9 @@ async function loadExpenses() {
         const data = await response.json();
         if (data.success) {
             expenses = data.expenses;
+            // Create indexed map for O(1) lookups
+            expensesMap.clear();
+            expenses.forEach(e => expensesMap.set(e.id, e));
             renderExpensesTable();
         }
     } catch (error) {
@@ -681,8 +734,11 @@ async function loadExpenses() {
 
 function renderExpensesTable() {
     const tbody = document.getElementById('expensesTable');
-    tbody.innerHTML = expenses.map(expense => `
-        <tr>
+    const fragment = document.createDocumentFragment();
+    
+    expenses.forEach(expense => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
             <td>${expense.title}</td>
             <td>${expense.category}</td>
             <td>${formatCurrency(expense.amount)}</td>
@@ -690,8 +746,12 @@ function renderExpensesTable() {
             <td>
                 <button class="btn-danger" onclick="deleteExpense('${expense.id}')">Delete</button>
             </td>
-        </tr>
-    `).join('');
+        `;
+        fragment.appendChild(tr);
+    });
+    
+    tbody.innerHTML = '';
+    tbody.appendChild(fragment);
 }
 
 function showExpenseModal() {
@@ -732,7 +792,7 @@ async function saveExpense(event) {
 }
 
 async function deleteExpense(expenseId) {
-    const expense = expenses.find(e => e.id === expenseId);
+    const expense = expensesMap.get(expenseId);
     if (!expense) return;
     
     // Show inline confirmation
@@ -783,6 +843,15 @@ async function loadReport(reportType, clickedElement) {
         clickedElement.classList.add('active');
     }
     
+    // Check cache first (cache for 30 seconds)
+    const cacheKey = reportType;
+    const now = Date.now();
+    if (cachedReports[cacheKey] && (now - cachedReports[cacheKey].timestamp < 30000)) {
+        const report = cachedReports[cacheKey].data;
+        updateReportUI(report);
+        return;
+    }
+    
     try {
         const response = await fetch(`/api/reports/${reportType}`);
         const data = await response.json();
@@ -790,19 +859,29 @@ async function loadReport(reportType, clickedElement) {
         if (data.success) {
             const report = data.report;
             
-            // Update report cards
-            document.getElementById('reportRevenue').textContent = formatCurrency(report.total_revenue);
-            document.getElementById('reportSales').textContent = report.total_sales.toLocaleString('en-US');
-            document.getElementById('reportExpenses').textContent = formatCurrency(report.total_expenses);
-            document.getElementById('reportProfit').textContent = formatCurrency(report.net_profit);
+            // Cache the report
+            cachedReports[cacheKey] = {
+                data: report,
+                timestamp: now
+            };
             
-            // Update charts
-            updatePaymentChart(report.payment_methods);
-            updateSalesChart(report.sales);
+            updateReportUI(report);
         }
     } catch (error) {
         console.error('Error loading report:', error);
     }
+}
+
+function updateReportUI(report) {
+    // Update report cards
+    document.getElementById('reportRevenue').textContent = formatCurrency(report.total_revenue);
+    document.getElementById('reportSales').textContent = report.total_sales.toLocaleString('en-US');
+    document.getElementById('reportExpenses').textContent = formatCurrency(report.total_expenses);
+    document.getElementById('reportProfit').textContent = formatCurrency(report.net_profit);
+    
+    // Update charts
+    updatePaymentChart(report.payment_methods);
+    updateSalesChart(report.sales);
 }
 
 function updatePaymentChart(paymentMethods) {

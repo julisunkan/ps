@@ -11,8 +11,12 @@ import json
 import uuid
 import os
 import io
+from threading import Lock
 
 app = Flask(__name__)
+
+# File lock for thread-safe file operations
+file_lock = Lock()
 
 # Configure Flask session
 app.config['SECRET_KEY'] = os.environ.get('SESSION_SECRET', 'dev-secret-key-change-in-production')
@@ -28,24 +32,29 @@ DATA_FILE = 'pos_data.json'
 def load_data_from_file():
     """Load user databases from JSON file"""
     global USER_DATABASES
-    if os.path.exists(DATA_FILE):
-        try:
-            with open(DATA_FILE, 'r') as f:
-                USER_DATABASES = json.load(f)
-            print(f"Loaded {len(USER_DATABASES)} user databases from file")
-        except Exception as e:
-            print(f"Error loading data: {e}")
+    with file_lock:
+        if os.path.exists(DATA_FILE):
+            try:
+                with open(DATA_FILE, 'r') as f:
+                    USER_DATABASES = json.load(f)
+                print(f"Loaded {len(USER_DATABASES)} user databases from file")
+            except Exception as e:
+                print(f"Error loading data: {e}")
+                USER_DATABASES = {}
+        else:
             USER_DATABASES = {}
-    else:
-        USER_DATABASES = {}
 
 def save_data_to_file():
-    """Save user databases to JSON file"""
-    try:
-        with open(DATA_FILE, 'w') as f:
-            json.dump(USER_DATABASES, f, indent=2)
-    except Exception as e:
-        print(f"Error saving data: {e}")
+    """Save user databases to JSON file with thread safety"""
+    with file_lock:
+        try:
+            # Write to temp file first, then rename for atomic operation
+            temp_file = DATA_FILE + '.tmp'
+            with open(temp_file, 'w') as f:
+                json.dump(USER_DATABASES, f, separators=(',', ':'))  # Compact format
+            os.replace(temp_file, DATA_FILE)
+        except Exception as e:
+            print(f"Error saving data: {e}")
 
 # Load existing data on startup
 load_data_from_file()
