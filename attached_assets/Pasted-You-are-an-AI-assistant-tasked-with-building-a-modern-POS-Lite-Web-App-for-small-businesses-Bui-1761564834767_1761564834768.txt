@@ -1,0 +1,73 @@
+You are an AI assistant tasked with building a **modern POS Lite Web App** for small businesses. Build it using **Python (Flask)** as backend and **SQLite** as database. The app must be **offline-first** and fully functional with the following requirements:
+
+**Features Required:**
+
+1. **User-specific POS databases**
+   - When a user clicks “Create POS”, automatically generate a **unique SQLite database** (`pos_user_<id>.db`) in a folder `user_dbs`.
+   - Auto-generate a **username and password** for the user.
+   - Store the credentials in the user’s database.
+   - Display credentials to the user after creation.
+
+2. **Authentication**
+   - Before accessing the dashboard, or performing **Export POS / Import POS**, user must enter login credentials.
+   - Only allow access to the POS tied to those credentials.
+
+3. **Index Page**
+   - Menu buttons: “Create POS”, “Export POS”, “Import POS”
+   - “Create POS” → creates the database + credentials
+   - “Export POS” → prompts login, then downloads user’s data as JSON
+   - “Import POS” → prompts login, then allows JSON upload to restore data
+
+4. **POS Dashboard**
+   - Add/Edit/Delete Products (name, category, barcode, cost_price, sale_price, quantity)
+   - Sales screen with cart, multiple payment methods (cash, card, transfer)
+   - Automatic stock deduction
+   - Customer management (name, phone, balance)
+   - Expenses tracking (title, category, amount)
+   - Generate and print receipts
+   - Daily/weekly/monthly reports with graphs (Chart.js)
+   - Light/Dark mode toggle
+   - User roles: owner, cashier, manager
+   - Settings: business name/logo, currency, VAT, etc.
+
+5. **Export/Import**
+   - Export all POS data (products, sales, customers, expenses, users) as JSON
+   - Import JSON backup only if correct credentials are provided
+
+6. **Security & Concurrency**
+   - Each user has **separate SQLite file** to avoid database locks/conflicts
+   - Session-based user login
+   - Prevent access to other users’ POS databases
+
+7. **Offline/PWA**
+   - Service worker + manifest for offline caching
+   - Installable on Windows, Android, iOS
+
+**Technical Requirements:**
+- Backend: Flask
+- Database: SQLite (one per user)
+- Frontend: HTML + CSS + JS (Bootstrap optional)
+- Printing: HTML → PDF or browser print
+- Charts: Chart.js
+- Folder structure:
+  poslite/
+    ├─ app.py
+    ├─ templates/
+    ├─ static/
+    └─ user_dbs/
+
+**Deliverables in Replit:**
+- Fully working Flask project that runs locally
+- index.html, login.html, dashboard.html templates
+- Static folder with JS/CSS
+- app.py with full backend logic
+- SQLite databases auto-generated in `user_dbs` folder
+- Ability to export/import JSON data securely
+- Demo data included for testing
+
+**Instructions for the AI:**
+- Generate all necessary files for the Flask project
+- Include comments explaining each part
+- Ensure code is ready to run in Replit with `flask run`
+- Make UI responsive and mobile-friendly
+- Include minimal example data in products/customers for demo
