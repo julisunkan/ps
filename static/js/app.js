@@ -13,10 +13,23 @@ let salesChart = null;
 // Utility function to format numbers with thousand separators
 function formatCurrency(amount) {
     const currencySymbols = {
-        'USD': '$',
-        'EUR': '€',
-        'GBP': '£',
-        'NGN': '₦'
+        'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CNY': '¥',
+        'AUD': '$', 'CAD': '$', 'CHF': 'Fr', 'INR': '₹', 'NGN': '₦',
+        'ZAR': 'R', 'BRL': 'R$', 'MXN': '$', 'RUB': '₽', 'KRW': '₩',
+        'SGD': '$', 'HKD': '$', 'NOK': 'kr', 'SEK': 'kr', 'DKK': 'kr',
+        'NZD': '$', 'TRY': '₺', 'PLN': 'zł', 'THB': '฿', 'IDR': 'Rp',
+        'MYR': 'RM', 'PHP': '₱', 'CZK': 'Kč', 'ILS': '₪', 'CLP': '$',
+        'AED': 'د.إ', 'SAR': '﷼', 'ARS': '$', 'EGP': '£', 'KES': 'Sh',
+        'GHS': '₵', 'PKR': '₨', 'BDT': '৳', 'VND': '₫', 'UAH': '₴',
+        'HUF': 'Ft', 'RON': 'lei', 'BGN': 'лв', 'HRK': 'kn', 'MAD': 'د.م.',
+        'TND': 'د.ت', 'JOD': 'د.ا', 'KWD': 'د.ك', 'BHD': 'د.ب', 'OMR': '﷼',
+        'QAR': '﷼', 'LKR': 'Rs', 'NPR': '₨', 'AFN': '؋', 'MMK': 'K',
+        'LAK': '₭', 'KHR': '៛', 'IQD': 'ع.د', 'IRR': '﷼', 'LBP': 'ل.ل',
+        'SYP': '£', 'YER': '﷼', 'COP': '$', 'PEN': 'S/', 'VES': 'Bs',
+        'UYU': '$', 'BOB': 'Bs', 'PYG': '₲', 'ETB': 'Br', 'UGX': 'Sh',
+        'TZS': 'Sh', 'RWF': 'Fr', 'XOF': 'Fr', 'XAF': 'Fr', 'MGA': 'Ar',
+        'MWK': 'MK', 'ZMW': 'ZK', 'BWP': 'P', 'MUR': '₨', 'SCR': '₨',
+        'MZN': 'MT', 'AOA': 'Kz', 'NAD': '$', 'SZL': 'L', 'LSL': 'L'
     };
     const symbol = currencySymbols[settings.currency] || '$';
     const formatted = parseFloat(amount).toLocaleString('en-US', {
