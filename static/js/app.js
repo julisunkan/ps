@@ -52,7 +52,14 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
     loadCustomers();
     loadExpenses();
-    loadReport('daily', document.querySelector('.tab-btn.active'));
+    
+    // Wait for DOM to be fully rendered before loading report
+    setTimeout(() => {
+        const activeTab = document.querySelector('#section-reports .tab-btn.active');
+        if (activeTab) {
+            loadReport('daily', activeTab);
+        }
+    }, 100);
     
     // Load theme preference
     const savedTheme = localStorage.getItem('theme') || 'light';
@@ -838,8 +845,8 @@ async function deleteExpense(expenseId) {
 // Reports
 async function loadReport(reportType, clickedElement) {
     // Update tab buttons
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    if (clickedElement) {
+    document.querySelectorAll('#section-reports .tab-btn').forEach(btn => btn.classList.remove('active'));
+    if (clickedElement && clickedElement.classList) {
         clickedElement.classList.add('active');
     }
     
