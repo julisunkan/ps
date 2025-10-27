@@ -582,20 +582,47 @@ async function saveCustomer(event) {
 }
 
 async function deleteCustomer(customerId) {
-    if (!confirm('Are you sure you want to delete this customer?')) return;
+    const customer = customers.find(c => c.id === customerId);
+    if (!customer) return;
     
-    try {
-        const response = await fetch(`/api/customers/${customerId}`, {
-            method: 'DELETE'
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-            await loadCustomers();
+    // Show inline confirmation
+    const confirmDiv = document.createElement('div');
+    confirmDiv.id = 'deleteCustomerConfirmation';
+    confirmDiv.innerHTML = `
+        <div style="padding: 15px; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; margin: 10px 0;">
+            <p style="margin: 0 0 10px 0; font-weight: 600;">Delete customer "${customer.name}"?</p>
+            <button id="confirmDeleteCustomer" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 10px; font-weight: 600;">Delete</button>
+            <button id="cancelDeleteCustomer" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel</button>
+        </div>
+    `;
+    
+    const tableContainer = document.querySelector('#section-customers .table-container');
+    const existingConfirm = document.getElementById('deleteCustomerConfirmation');
+    if (existingConfirm) existingConfirm.remove();
+    
+    tableContainer.insertBefore(confirmDiv, tableContainer.firstChild);
+    
+    document.getElementById('confirmDeleteCustomer').onclick = async () => {
+        try {
+            const response = await fetch(`/api/customers/${customerId}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                confirmDiv.remove();
+                await loadCustomers();
+                showInlineMessage('Customer deleted successfully!', 'success');
+            }
+        } catch (error) {
+            confirmDiv.remove();
+            showInlineMessage('Error deleting customer: ' + error.message, 'error');
         }
-    } catch (error) {
-        alert('❌ Error deleting customer: ' + error.message);
-    }
+    };
+    
+    document.getElementById('cancelDeleteCustomer').onclick = () => {
+        confirmDiv.remove();
+    };
 }
 
 // Expenses Management
@@ -665,20 +692,47 @@ async function saveExpense(event) {
 }
 
 async function deleteExpense(expenseId) {
-    if (!confirm('Are you sure you want to delete this expense?')) return;
+    const expense = expenses.find(e => e.id === expenseId);
+    if (!expense) return;
     
-    try {
-        const response = await fetch(`/api/expenses/${expenseId}`, {
-            method: 'DELETE'
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-            await loadExpenses();
+    // Show inline confirmation
+    const confirmDiv = document.createElement('div');
+    confirmDiv.id = 'deleteExpenseConfirmation';
+    confirmDiv.innerHTML = `
+        <div style="padding: 15px; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; margin: 10px 0;">
+            <p style="margin: 0 0 10px 0; font-weight: 600;">Delete expense "${expense.title}"?</p>
+            <button id="confirmDeleteExpense" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 10px; font-weight: 600;">Delete</button>
+            <button id="cancelDeleteExpense" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel</button>
+        </div>
+    `;
+    
+    const tableContainer = document.querySelector('#section-expenses .table-container');
+    const existingConfirm = document.getElementById('deleteExpenseConfirmation');
+    if (existingConfirm) existingConfirm.remove();
+    
+    tableContainer.insertBefore(confirmDiv, tableContainer.firstChild);
+    
+    document.getElementById('confirmDeleteExpense').onclick = async () => {
+        try {
+            const response = await fetch(`/api/expenses/${expenseId}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                confirmDiv.remove();
+                await loadExpenses();
+                showInlineMessage('Expense deleted successfully!', 'success');
+            }
+        } catch (error) {
+            confirmDiv.remove();
+            showInlineMessage('Error deleting expense: ' + error.message, 'error');
         }
-    } catch (error) {
-        alert('❌ Error deleting expense: ' + error.message);
-    }
+    };
+    
+    document.getElementById('cancelDeleteExpense').onclick = () => {
+        confirmDiv.remove();
+    };
 }
 
 // Reports
