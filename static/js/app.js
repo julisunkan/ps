@@ -116,16 +116,16 @@ async function saveSettings() {
     }
 }
 
-function showInlineMessage(message, type) {
+function showInlineMessage(message, type, targetSelector = '.settings-form') {
     // Remove existing message if any
-    const existingMessage = document.getElementById('settingsMessage');
+    const existingMessage = document.getElementById('inlineMessage');
     if (existingMessage) {
         existingMessage.remove();
     }
     
     // Create message element
     const messageDiv = document.createElement('div');
-    messageDiv.id = 'settingsMessage';
+    messageDiv.id = 'inlineMessage';
     messageDiv.textContent = message;
     messageDiv.style.padding = '12px 20px';
     messageDiv.style.marginTop = '15px';
@@ -142,9 +142,11 @@ function showInlineMessage(message, type) {
         messageDiv.style.color = 'white';
     }
     
-    // Insert message after the save button
-    const settingsForm = document.querySelector('.settings-form');
-    settingsForm.appendChild(messageDiv);
+    // Insert message
+    const targetElement = document.querySelector(targetSelector) || document.querySelector('.settings-form');
+    if (targetElement) {
+        targetElement.appendChild(messageDiv);
+    }
     
     // Auto-remove after 3 seconds with fade out
     setTimeout(() => {
@@ -285,20 +287,47 @@ async function saveProduct(event) {
 }
 
 async function deleteProduct(productId) {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
     
-    try {
-        const response = await fetch(`/api/products/${productId}`, {
-            method: 'DELETE'
-        });
-        
-        const data = await response.json();
-        if (data.success) {
-            await loadProducts();
+    // Show inline confirmation
+    const confirmDiv = document.createElement('div');
+    confirmDiv.id = 'deleteConfirmation';
+    confirmDiv.innerHTML = `
+        <div style="padding: 15px; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; margin: 10px 0;">
+            <p style="margin: 0 0 10px 0; font-weight: 600;">Delete "${product.name}"?</p>
+            <button id="confirmDelete" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 10px; font-weight: 600;">Delete</button>
+            <button id="cancelDelete" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel</button>
+        </div>
+    `;
+    
+    const tableContainer = document.querySelector('#section-products .table-container');
+    const existingConfirm = document.getElementById('deleteConfirmation');
+    if (existingConfirm) existingConfirm.remove();
+    
+    tableContainer.insertBefore(confirmDiv, tableContainer.firstChild);
+    
+    document.getElementById('confirmDelete').onclick = async () => {
+        try {
+            const response = await fetch(`/api/products/${productId}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                confirmDiv.remove();
+                await loadProducts();
+                showInlineMessage('Product deleted successfully!', 'success');
+            }
+        } catch (error) {
+            confirmDiv.remove();
+            showInlineMessage('Error deleting product: ' + error.message, 'error');
         }
-    } catch (error) {
-        alert('❌ Error deleting product: ' + error.message);
-    }
+    };
+    
+    document.getElementById('cancelDelete').onclick = () => {
+        confirmDiv.remove();
+    };
 }
 
 // Cart Management
