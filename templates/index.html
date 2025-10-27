@@ -200,7 +200,8 @@
                 </div>
             </div>
             <p style="color: #dc2626; font-weight: 600;">⚠️ Important: Save these credentials! You won't be able to see them again.</p>
-            <button class="index-btn btn-close" onclick="closeCredentialsModal()">Got it!</button>
+            <button class="index-btn btn-create" onclick="autoLogin()" style="width: 100%;">🔓 Auto Login</button>
+            <button class="index-btn btn-close" onclick="closeCredentialsModal()" style="width: 100%;">Save for Later</button>
         </div>
     </div>
 
@@ -256,6 +257,9 @@
                 .catch(err => console.log('Service Worker registration failed', err));
         }
 
+        // Store credentials temporarily for auto-login
+        let currentCredentials = null;
+
         async function createPOS() {
             try {
                 const response = await fetch('/api/create-pos', {
@@ -265,6 +269,12 @@
                 const data = await response.json();
                 
                 if (data.success) {
+                    // Store credentials for auto-login
+                    currentCredentials = {
+                        username: data.username,
+                        password: data.password
+                    };
+                    
                     document.getElementById('displayUsername').textContent = data.username;
                     document.getElementById('displayPassword').textContent = data.password;
                     document.getElementById('credentialsModal').classList.add('active');
@@ -274,8 +284,38 @@
             }
         }
 
+        async function autoLogin() {
+            if (!currentCredentials) {
+                alert('❌ No credentials available');
+                return;
+            }
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: currentCredentials.username,
+                        password: currentCredentials.password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Redirect to dashboard
+                    window.location.href = data.redirect;
+                } else {
+                    alert('❌ Auto-login failed: ' + data.message);
+                }
+            } catch (error) {
+                alert('❌ Error during auto-login: ' + error.message);
+            }
+        }
+
         function closeCredentialsModal() {
             document.getElementById('credentialsModal').classList.remove('active');
+            currentCredentials = null; // Clear stored credentials
         }
 
         function showExportModal() {
