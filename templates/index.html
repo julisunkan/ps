@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS Lite - Point of Sale System</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <meta name="theme-color" content="#4F46E5">
+    <style>
+        .index-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        .index-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .index-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            color: #1f2937;
+        }
+        .index-subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 40px;
+        }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .index-btn {
+            padding: 18px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-create {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-create:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn-export {
+            background: #10b981;
+            color: white;
+        }
+        .btn-export:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4);
+        }
+        .btn-import {
+            background: #f59e0b;
+            color: white;
+        }
+        .btn-import:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(245, 158, 11, 0.4);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .credentials-box {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .credential-item {
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .credential-label {
+            font-weight: bold;
+            color: #4b5563;
+        }
+        .btn-close {
+            background: #6b7280;
+            color: white;
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="index-container">
+        <div class="index-card">
+            <h1 class="index-title">🏪 POS Lite</h1>
+            <p class="index-subtitle">Modern Point of Sale for Small Businesses</p>
+            
+            <div class="btn-group">
+                <button class="index-btn btn-create" onclick="createPOS()">
+                    <span>➕</span> Create New POS
+                </button>
+                <button class="index-btn btn-export" onclick="showExportModal()">
+                    <span>📤</span> Export POS Data
+                </button>
+                <button class="index-btn btn-import" onclick="showImportModal()">
+                    <span>📥</span> Import POS Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Credentials Modal -->
+    <div id="credentialsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">✅ POS Created Successfully!</div>
+            <p>Your new POS system has been created. Please save these credentials securely:</p>
+            <div class="credentials-box">
+                <div class="credential-item">
+                    <span class="credential-label">Username:</span>
+                    <div id="displayUsername" style="font-size: 1.2rem; margin-top: 5px;"></div>
+                </div>
+                <div class="credential-item" style="margin-top: 15px;">
+                    <span class="credential-label">Password:</span>
+                    <div id="displayPassword" style="font-size: 1.2rem; margin-top: 5px;"></div>
+                </div>
+            </div>
+            <p style="color: #dc2626; font-weight: 600;">⚠️ Important: Save these credentials! You won't be able to see them again.</p>
+            <button class="index-btn btn-close" onclick="closeCredentialsModal()">Got it!</button>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">📤 Export POS Data</div>
+            <div id="exportAlert"></div>
+            <form onsubmit="exportData(event)">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" id="exportUsername" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="exportPassword" required>
+                </div>
+                <button type="submit" class="index-btn btn-export" style="width: 100%;">Export Data</button>
+                <button type="button" class="index-btn btn-close" onclick="closeExportModal()" style="width: 100%;">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">📥 Import POS Data</div>
+            <div id="importAlert"></div>
+            <form onsubmit="importData(event)">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" id="importUsername" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="importPassword" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Select JSON File</label>
+                    <input type="file" class="form-input" id="importFile" accept=".json" required>
+                </div>
+                <button type="submit" class="index-btn btn-import" style="width: 100%;">Import Data</button>
+                <button type="button" class="index-btn btn-close" onclick="closeImportModal()" style="width: 100%;">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/js/sw.js')
+                .then(reg => console.log('Service Worker registered', reg))
+                .catch(err => console.log('Service Worker registration failed', err));
+        }
+
+        async function createPOS() {
+            try {
+                const response = await fetch('/api/create-pos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('displayUsername').textContent = data.username;
+                    document.getElementById('displayPassword').textContent = data.password;
+                    document.getElementById('credentialsModal').classList.add('active');
+                }
+            } catch (error) {
+                alert('Error creating POS: ' + error.message);
+            }
+        }
+
+        function closeCredentialsModal() {
+            document.getElementById('credentialsModal').classList.remove('active');
+        }
+
+        function showExportModal() {
+            document.getElementById('exportModal').classList.add('active');
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.remove('active');
+            document.getElementById('exportAlert').innerHTML = '';
+        }
+
+        function showImportModal() {
+            document.getElementById('importModal').classList.add('active');
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('active');
+            document.getElementById('importAlert').innerHTML = '';
+        }
+
+        async function exportData(event) {
+            event.preventDefault();
+            const username = document.getElementById('exportUsername').value;
+            const password = document.getElementById('exportPassword').value;
+            
+            try {
+                const response = await fetch('/api/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const dataStr = JSON.stringify(result.data, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `pos_backup_${username}_${new Date().toISOString().split('T')[0]}.json`;
+                    link.click();
+                    
+                    document.getElementById('exportAlert').innerHTML = 
+                        '<div class="alert alert-success">✅ Data exported successfully!</div>';
+                    setTimeout(closeExportModal, 2000);
+                } else {
+                    document.getElementById('exportAlert').innerHTML = 
+                        `<div class="alert alert-error">❌ ${result.message}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('exportAlert').innerHTML = 
+                    `<div class="alert alert-error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function importData(event) {
+            event.preventDefault();
+            const username = document.getElementById('importUsername').value;
+            const password = document.getElementById('importPassword').value;
+            const fileInput = document.getElementById('importFile');
+            
+            if (!fileInput.files[0]) {
+                document.getElementById('importAlert').innerHTML = 
+                    '<div class="alert alert-error">❌ Please select a file</div>';
+                return;
+            }
+            
+            try {
+                const fileContent = await fileInput.files[0].text();
+                const importData = JSON.parse(fileContent);
+                
+                const response = await fetch('/api/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, data: importData })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('importAlert').innerHTML = 
+                        '<div class="alert alert-success">✅ Data imported successfully!</div>';
+                    setTimeout(closeImportModal, 2000);
+                } else {
+                    document.getElementById('importAlert').innerHTML = 
+                        `<div class="alert alert-error">❌ ${result.message}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('importAlert').innerHTML = 
+                    `<div class="alert alert-error">❌ Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

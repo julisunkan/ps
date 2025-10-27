@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - POS Lite</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>🏪 POS Lite</h2>
+                <button class="btn-toggle" onclick="toggleSidebar()">☰</button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-link active" onclick="showSection('sales')">
+                    <span>🛒</span> Sales
+                </a>
+                <a href="#" class="nav-link" onclick="showSection('products')">
+                    <span>📦</span> Products
+                </a>
+                <a href="#" class="nav-link" onclick="showSection('customers')">
+                    <span>👥</span> Customers
+                </a>
+                <a href="#" class="nav-link" onclick="showSection('expenses')">
+                    <span>💸</span> Expenses
+                </a>
+                <a href="#" class="nav-link" onclick="showSection('reports')">
+                    <span>📊</span> Reports
+                </a>
+                <a href="#" class="nav-link" onclick="showSection('settings')">
+                    <span>⚙️</span> Settings
+                </a>
+                <a href="/logout" class="nav-link">
+                    <span>🚪</span> Logout
+                </a>
+            </nav>
+            <div class="theme-toggle">
+                <button onclick="toggleTheme()" id="themeToggle">🌙 Dark Mode</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <button class="btn-menu-mobile" onclick="toggleSidebar()">☰</button>
+                <h1 id="sectionTitle">Sales</h1>
+                <div class="user-info">
+                    <span id="businessName">My Business</span>
+                </div>
+            </div>
+
+            <!-- Sales Section -->
+            <section id="section-sales" class="content-section active">
+                <div class="sales-grid">
+                    <div class="products-panel">
+                        <div class="panel-header">
+                            <h3>Products</h3>
+                            <input type="text" class="search-input" placeholder="Search products..." id="productSearch" oninput="filterProducts()">
+                        </div>
+                        <div class="product-grid" id="productGrid"></div>
+                    </div>
+                    
+                    <div class="cart-panel">
+                        <h3>Current Sale</h3>
+                        <div class="cart-items" id="cartItems"></div>
+                        <div class="cart-summary">
+                            <div class="summary-row">
+                                <span>Subtotal:</span>
+                                <span id="cartSubtotal">$0.00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>VAT:</span>
+                                <span id="cartVat">$0.00</span>
+                            </div>
+                            <div class="summary-row total">
+                                <span>Total:</span>
+                                <span id="cartTotal">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="payment-section">
+                            <label>Payment Method:</label>
+                            <select id="paymentMethod" class="form-select">
+                                <option value="cash">Cash</option>
+                                <option value="card">Card</option>
+                                <option value="transfer">Transfer</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary btn-large" onclick="completeSale()">Complete Sale</button>
+                        <button class="btn-secondary btn-large" onclick="clearCart()">Clear Cart</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Products Section -->
+            <section id="section-products" class="content-section">
+                <div class="section-header">
+                    <h2>Product Management</h2>
+                    <button class="btn-primary" onclick="showProductModal()">+ Add Product</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Barcode</th>
+                                <th>Cost Price</th>
+                                <th>Sale Price</th>
+                                <th>Quantity</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTable"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Customers Section -->
+            <section id="section-customers" class="content-section">
+                <div class="section-header">
+                    <h2>Customer Management</h2>
+                    <button class="btn-primary" onclick="showCustomerModal()">+ Add Customer</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Balance</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customersTable"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Expenses Section -->
+            <section id="section-expenses" class="content-section">
+                <div class="section-header">
+                    <h2>Expense Tracking</h2>
+                    <button class="btn-primary" onclick="showExpenseModal()">+ Add Expense</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expensesTable"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Reports Section -->
+            <section id="section-reports" class="content-section">
+                <div class="section-header">
+                    <h2>Sales Reports</h2>
+                    <div class="report-tabs">
+                        <button class="tab-btn active" onclick="loadReport('daily')">Daily</button>
+                        <button class="tab-btn" onclick="loadReport('weekly')">Weekly</button>
+                        <button class="tab-btn" onclick="loadReport('monthly')">Monthly</button>
+                    </div>
+                </div>
+                <div class="report-cards">
+                    <div class="report-card">
+                        <h3>Total Revenue</h3>
+                        <div class="report-value" id="reportRevenue">$0.00</div>
+                    </div>
+                    <div class="report-card">
+                        <h3>Total Sales</h3>
+                        <div class="report-value" id="reportSales">0</div>
+                    </div>
+                    <div class="report-card">
+                        <h3>Total Expenses</h3>
+                        <div class="report-value" id="reportExpenses">$0.00</div>
+                    </div>
+                    <div class="report-card">
+                        <h3>Net Profit</h3>
+                        <div class="report-value" id="reportProfit">$0.00</div>
+                    </div>
+                </div>
+                <div class="charts-container">
+                    <div class="chart-box">
+                        <h3>Payment Methods</h3>
+                        <canvas id="paymentChart"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <h3>Sales Trend</h3>
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="section-settings" class="content-section">
+                <h2>Business Settings</h2>
+                <div class="settings-form">
+                    <div class="form-group">
+                        <label>Business Name</label>
+                        <input type="text" id="settingsBusinessName" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Currency</label>
+                        <select id="settingsCurrency" class="form-select">
+                            <option value="USD">USD ($)</option>
+                            <option value="EUR">EUR (€)</option>
+                            <option value="GBP">GBP (£)</option>
+                            <option value="NGN">NGN (₦)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>VAT Rate (%)</label>
+                        <input type="number" id="settingsVat" class="form-input" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>User Role</label>
+                        <select id="settingsRole" class="form-select">
+                            <option value="owner">Owner</option>
+                            <option value="manager">Manager</option>
+                            <option value="cashier">Cashier</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" onclick="saveSettings()">Save Settings</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Product Modal -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="productModalTitle">Add Product</h3>
+                <button class="btn-close" onclick="closeProductModal()">×</button>
+            </div>
+            <form onsubmit="saveProduct(event)">
+                <input type="hidden" id="productId">
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="productName" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="text" id="productCategory" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Barcode</label>
+                    <input type="text" id="productBarcode" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Cost Price</label>
+                    <input type="number" id="productCost" class="form-input" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Sale Price</label>
+                    <input type="number" id="productPrice" class="form-input" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Quantity</label>
+                    <input type="number" id="productQuantity" class="form-input" required>
+                </div>
+                <button type="submit" class="btn-primary btn-large">Save Product</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer Modal -->
+    <div id="customerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="customerModalTitle">Add Customer</h3>
+                <button class="btn-close" onclick="closeCustomerModal()">×</button>
+            </div>
+            <form onsubmit="saveCustomer(event)">
+                <input type="hidden" id="customerId">
+                <div class="form-group">
+                    <label>Customer Name</label>
+                    <input type="text" id="customerName" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="customerPhone" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Balance</label>
+                    <input type="number" id="customerBalance" class="form-input" step="0.01" value="0">
+                </div>
+                <button type="submit" class="btn-primary btn-large">Save Customer</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Expense Modal -->
+    <div id="expenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Expense</h3>
+                <button class="btn-close" onclick="closeExpenseModal()">×</button>
+            </div>
+            <form onsubmit="saveExpense(event)">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="expenseTitle" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="expenseCategory" class="form-select">
+                        <option value="utilities">Utilities</option>
+                        <option value="rent">Rent</option>
+                        <option value="salaries">Salaries</option>
+                        <option value="supplies">Supplies</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="expenseAmount" class="form-input" step="0.01" required>
+                </div>
+                <button type="submit" class="btn-primary btn-large">Save Expense</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div id="receiptModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>Receipt</h3>
+                <button class="btn-close" onclick="closeReceiptModal()">×</button>
+            </div>
+            <div id="receiptContent" class="receipt"></div>
+            <button class="btn-primary btn-large" onclick="printReceipt()">Print Receipt</button>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
