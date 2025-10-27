@@ -109,11 +109,50 @@ async function saveSettings() {
         if (data.success) {
             settings = data.settings;
             document.getElementById('businessName').textContent = settings.business_name;
-            alert('✅ Settings saved successfully!');
+            showInlineMessage('Settings saved successfully!', 'success');
         }
     } catch (error) {
-        alert('❌ Error saving settings: ' + error.message);
+        showInlineMessage('Error saving settings: ' + error.message, 'error');
     }
+}
+
+function showInlineMessage(message, type) {
+    // Remove existing message if any
+    const existingMessage = document.getElementById('settingsMessage');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    // Create message element
+    const messageDiv = document.createElement('div');
+    messageDiv.id = 'settingsMessage';
+    messageDiv.textContent = message;
+    messageDiv.style.padding = '12px 20px';
+    messageDiv.style.marginTop = '15px';
+    messageDiv.style.borderRadius = '8px';
+    messageDiv.style.fontWeight = '600';
+    messageDiv.style.textAlign = 'center';
+    messageDiv.style.transition = 'opacity 0.3s ease';
+    
+    if (type === 'success') {
+        messageDiv.style.backgroundColor = '#10b981';
+        messageDiv.style.color = 'white';
+    } else {
+        messageDiv.style.backgroundColor = '#ef4444';
+        messageDiv.style.color = 'white';
+    }
+    
+    // Insert message after the save button
+    const settingsForm = document.querySelector('.settings-form');
+    settingsForm.appendChild(messageDiv);
+    
+    // Auto-remove after 3 seconds with fade out
+    setTimeout(() => {
+        messageDiv.style.opacity = '0';
+        setTimeout(() => {
+            messageDiv.remove();
+        }, 300);
+    }, 3000);
 }
 
 // Products Management
