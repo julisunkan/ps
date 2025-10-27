@@ -1,6 +1,6 @@
 {
-  "name": "POS Lite - Point of Sale System",
-  "short_name": "POS Lite",
+  "name": "Remote Store Manager",
+  "short_name": "Remote Store Manager",
   "description": "Modern Point of Sale system for small businesses",
   "start_url": "/",
   "display": "standalone",
