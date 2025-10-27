@@ -12,10 +12,18 @@ let salesChart = null;
 
 // Utility function to format numbers with thousand separators
 function formatCurrency(amount) {
-    return parseFloat(amount).toLocaleString('en-US', {
+    const currencySymbols = {
+        'USD': '$',
+        'EUR': '€',
+        'GBP': '£',
+        'NGN': '₦'
+    };
+    const symbol = currencySymbols[settings.currency] || '$';
+    const formatted = parseFloat(amount).toLocaleString('en-US', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
+    return `${symbol}${formatted}`;
 }
 
 // Initialize app when DOM loads
@@ -117,6 +125,17 @@ async function saveSettings() {
         if (data.success) {
             settings = data.settings;
             document.getElementById('businessName').textContent = settings.business_name;
+            // Reload all displays to apply currency changes
+            renderProductsTable();
+            renderProductGrid();
+            renderCart();
+            renderCustomersTable();
+            renderExpensesTable();
+            const activeTab = document.querySelector('#section-reports .tab-btn.active');
+            if (activeTab) {
+                const reportType = activeTab.textContent.toLowerCase();
+                loadReport(reportType, activeTab);
+            }
             showInlineMessage('Settings saved successfully!', 'success');
         }
     } catch (error) {
@@ -187,8 +206,8 @@ function renderProductsTable() {
             <td>${product.name}</td>
             <td>${product.category}</td>
             <td>${product.barcode || 'N/A'}</td>
-            <td>$${formatCurrency(product.cost_price)}</td>
-            <td>$${formatCurrency(product.sale_price)}</td>
+            <td>${formatCurrency(product.cost_price)}</td>
+            <td>${formatCurrency(product.sale_price)}</td>
             <td>${parseInt(product.quantity).toLocaleString('en-US')}</td>
             <td>
                 <button class="btn-edit" onclick="editProduct('${product.id}')">Edit</button>
@@ -205,7 +224,7 @@ function renderProductGrid() {
     grid.innerHTML = filtered.map(product => `
         <div class="product-card" onclick="addToCart('${product.id}')">
             <h4>${product.name}</h4>
-            <div class="price">$${formatCurrency(product.sale_price)}</div>
+            <div class="price">${formatCurrency(product.sale_price)}</div>
             <div class="stock">Stock: ${parseInt(product.quantity).toLocaleString('en-US')}</div>
         </div>
     `).join('');
@@ -222,7 +241,7 @@ function filterProducts() {
     grid.innerHTML = filtered.map(product => `
         <div class="product-card" onclick="addToCart('${product.id}')">
             <h4>${product.name}</h4>
-            <div class="price">$${formatCurrency(product.sale_price)}</div>
+            <div class="price">${formatCurrency(product.sale_price)}</div>
             <div class="stock">Stock: ${parseInt(product.quantity).toLocaleString('en-US')}</div>
         </div>
     `).join('');
@@ -395,7 +414,7 @@ function renderCart() {
             <div class="cart-item">
                 <div class="cart-item-info">
                     <h4>${item.name}</h4>
-                    <div>$${formatCurrency(item.price)} × ${item.quantity}</div>
+                    <div>${formatCurrency(item.price)} × ${item.quantity}</div>
                 </div>
                 <div class="cart-item-controls">
                     <button class="qty-btn" onclick="updateCartItemQty('${item.product_id}', -1)">-</button>
@@ -415,9 +434,9 @@ function updateCartSummary() {
     const vat = subtotal * (vatRate / 100);
     const total = subtotal + vat;
     
-    document.getElementById('cartSubtotal').textContent = `$${formatCurrency(subtotal)}`;
-    document.getElementById('cartVat').textContent = `$${formatCurrency(vat)}`;
-    document.getElementById('cartTotal').textContent = `$${formatCurrency(total)}`;
+    document.getElementById('cartSubtotal').textContent = formatCurrency(subtotal);
+    document.getElementById('cartVat').textContent = formatCurrency(vat);
+    document.getElementById('cartTotal').textContent = formatCurrency(total);
 }
 
 function clearCart() {
@@ -476,15 +495,15 @@ function showReceipt(sale) {
             ${sale.items.map(item => `
                 <div class="receipt-item">
                     <span>${item.name} (${item.quantity})</span>
-                    <span>$${formatCurrency(item.price * item.quantity)}</span>
+                    <span>${formatCurrency(item.price * item.quantity)}</span>
                 </div>
             `).join('')}
         </div>
         <div class="receipt-footer">
-            <div class="receipt-item"><strong>Subtotal:</strong> <strong>$${formatCurrency(sale.subtotal)}</strong></div>
-            <div class="receipt-item"><strong>VAT:</strong> <strong>$${formatCurrency(sale.vat)}</strong></div>
+            <div class="receipt-item"><strong>Subtotal:</strong> <strong>${formatCurrency(sale.subtotal)}</strong></div>
+            <div class="receipt-item"><strong>VAT:</strong> <strong>${formatCurrency(sale.vat)}</strong></div>
             <div class="receipt-item" style="font-size: 1.2rem; margin-top: 10px;">
-                <strong>TOTAL:</strong> <strong>$${formatCurrency(sale.total)}</strong>
+                <strong>TOTAL:</strong> <strong>${formatCurrency(sale.total)}</strong>
             </div>
             <p style="margin-top: 20px;">Payment: ${sale.payment_method.toUpperCase()}</p>
             <p style="margin-top: 20px;">Thank you for your business!</p>
@@ -523,7 +542,7 @@ function renderCustomersTable() {
         <tr>
             <td>${customer.name}</td>
             <td>${customer.phone}</td>
-            <td>$${formatCurrency(customer.balance || 0)}</td>
+            <td>${formatCurrency(customer.balance || 0)}</td>
             <td>
                 <button class="btn-edit" onclick="editCustomer('${customer.id}')">Edit</button>
                 <button class="btn-danger" onclick="deleteCustomer('${customer.id}')">Delete</button>
@@ -653,7 +672,7 @@ function renderExpensesTable() {
         <tr>
             <td>${expense.title}</td>
             <td>${expense.category}</td>
-            <td>$${formatCurrency(expense.amount)}</td>
+            <td>${formatCurrency(expense.amount)}</td>
             <td>${new Date(expense.created_at).toLocaleDateString()}</td>
             <td>
                 <button class="btn-danger" onclick="deleteExpense('${expense.id}')">Delete</button>
@@ -759,10 +778,10 @@ async function loadReport(reportType, clickedElement) {
             const report = data.report;
             
             // Update report cards
-            document.getElementById('reportRevenue').textContent = `$${formatCurrency(report.total_revenue)}`;
+            document.getElementById('reportRevenue').textContent = formatCurrency(report.total_revenue);
             document.getElementById('reportSales').textContent = report.total_sales.toLocaleString('en-US');
-            document.getElementById('reportExpenses').textContent = `$${formatCurrency(report.total_expenses)}`;
-            document.getElementById('reportProfit').textContent = `$${formatCurrency(report.net_profit)}`;
+            document.getElementById('reportExpenses').textContent = formatCurrency(report.total_expenses);
+            document.getElementById('reportProfit').textContent = formatCurrency(report.net_profit);
             
             // Update charts
             updatePaymentChart(report.payment_methods);
